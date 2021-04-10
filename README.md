@@ -3,7 +3,7 @@
 ---
 [![Hits](https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fgithub.com%2FLee-HyeongBin%2FData_Science_Project%2F&count_bg=%2379C83D&title_bg=%23555555&icon=&icon_color=%23E7E7E7&title=hits&edge_flat=false)](https://hits.seeyoufarm.com) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 ---
-<b>Since</b> 2020.07.10 ~ 2020.12.28
+<b>Since</b> 2020.07.10 ~ 2021.04.28
 ---
 * 데이터 분석 학회 '인사이트'에서 진행한 프로젝트 코드 및 PPT 정리
 * 각 코드 내 마크다운과 주석 또는 PPT를 통하여 설명
@@ -42,3 +42,10 @@
 3) 전략 알고리즘 : 기술적 분석을 통한 매매기법 백테스팅 후 적용
 4) 포트폴리오 생성
 5) 사용자 DB 유지 및 관리
+
+## 4. 에타 과목 추천 시스템
+* 에브리타임 과목 자동 추천 시스템
+1) Ipywidget으로 사용자 DB 정보 받기
+2) 사용자에게 최적화된 시간표 후보군 생성
+3) 사용자의 선호별 시간표 추천 (시각화 포함)
+4) 사용자 DB 유지 및 관리 (시간표 피드백)
