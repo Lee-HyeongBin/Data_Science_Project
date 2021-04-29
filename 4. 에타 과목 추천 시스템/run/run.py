@@ -1,8 +1,10 @@
 import os
 import re
 import time
+import textwrap
 import numpy as np
 import pandas as pd
+import datetime as dt
 
 import ipywidgets as widgets
 from ipywidgets import interact
@@ -12,6 +14,9 @@ from IPython.display import display
 from IPython.display import clear_output
 from IPython.display import Image as disImage
 from PIL import Image, ImageFont, ImageDraw
+
+import warnings
+warnings.filterwarnings('ignore')
 
 from .preprocessing.competition import Competition
 from .preprocessing.course import Course
@@ -125,8 +130,9 @@ class Everytime:
         try:
             self.total_info = pd.read_csv(self.path_user + "userDB.csv", encoding="UTF-8-SIG")
         except FileNotFoundError:
-            print('------------------------------------------------ userDB.csv 파일을 찾을 수 없습니다. 먼저 userDB를 생성하겠습니다. ------------------------------------------------\n')
-            time.sleep(2)
+            self.make_to_db = Image.open(self.path + "/data/interface/image/start/make_to_db.png")
+            display(self.make_to_db)
+            time.sleep(2.3)
             clear_output()
             userdb = pd.DataFrame(columns=("학번", "이름", "본전공", "복수전공", "학기수", "전공과목수", "교양과목수",
                                                                            "필수과목1", "필수과목2", "필수과목3",
@@ -138,6 +144,11 @@ class Everytime:
         
         display(start_img18)
         time.sleep(2)
+        clear_output()
+        
+        self.warnings = Image.open(self.path + "/data/interface/image/start/warnings.png")
+        display(self.warnings)
+        time.sleep(5)
         clear_output()
         
         self.start = widgets.Button(description = "😝 에브리타임 과목 추천 시작", layout = Layout(width = 'auto', height = '100%'), style = ButtonStyle(button_color = '#FF848F'))
@@ -171,6 +182,12 @@ class Everytime:
     def plus_honey(self, change):
         clear_output()
         self.plush = pd.read_csv(self.path + '/result/source/final_result.csv', encoding = 'UTF-8-SIG')
+        self.plus_tmp = pd.read_csv(self.path + '/result/source/tmp_result.csv', encoding = 'UTF-8-SIG')
+        
+        self.plush = self.plush.append(self.plus_tmp)
+        self.plush = self.plush.drop_duplicates(subset = ['과목명', '교수명', '소속', '과목코드'])
+        self.plush.reset_index(drop = True, inplace = True)
+        
         display(self.plus_4)
         display(self.next_button1)
         self.next_button1.on_click(self.plus_next1)
@@ -178,6 +195,12 @@ class Everytime:
     def plus_study(self, change):
         clear_output()
         self.plush = pd.read_csv(self.path + '/result/source/final_result.csv', encoding = 'UTF-8-SIG')
+        self.plus_tmp = pd.read_csv(self.path + '/result/source/tmp_result.csv', encoding = 'UTF-8-SIG')
+        
+        self.plush = self.plush.append(self.plus_tmp)
+        self.plush = self.plush.drop_duplicates(subset = ['과목명', '교수명', '소속', '과목코드'])
+        self.plush.reset_index(drop = True, inplace = True)
+        
         display(self.plus_5)
         display(self.next_button2)
         self.next_button2.on_click(self.plus_next2)
@@ -185,7 +208,10 @@ class Everytime:
     def plus_next1(self, change):
         clear_output()
         pd.options.display.max_rows = 100
-        display(self.plush[(self.plush['소속'] == Everytime.plus_4.value) & (self.plush['꿀점수'] == np.float(1.000))].iloc[:, [0, 2, 3]])
+        self.honey_frame = self.plush[(self.plush['소속'] == Everytime.plus_4.value) & (self.plush['꿀점수'] == np.float(1.000))].iloc[:, [0, 2, 3]]
+        self.honey_frame.drop_duplicates(inplace = True)
+        self.honey_frame.reset_index(drop = True, inplace = True)
+        display(self.honey_frame)
         display(self.back6)
         self.back6.on_click(self.show_first)
         pd.options.display.max_rows = 20
@@ -193,21 +219,29 @@ class Everytime:
     def plus_next2(self, change):
         clear_output()
         pd.options.display.max_rows = 100
-        display(self.plush[(self.plush['소속'] == Everytime.plus_5.value) & (self.plush['배움점수'] == np.float(1.000))].iloc[:, [0, 2, 3]])
+        self.study_frame = self.plush[(self.plush['소속'] == Everytime.plus_5.value) & (self.plush['배움점수'] == np.float(1.000))].iloc[:, [0, 2, 3]]
+        self.study_frame.drop_duplicates(inplace = True)
+        self.study_frame.reset_index(drop = True, inplace = True)
+        display(self.study_frame)
         display(self.back7)
         self.back7.on_click(self.show_first)
         pd.options.display.max_rows = 20
     
     def plus_major(self, change):
         clear_output()
+        self.plush = pd.read_csv(self.path + '/result/source/final_result.csv', encoding = 'UTF-8-SIG')
+        self.plus_tmp = pd.read_csv(self.path + '/result/source/tmp_result.csv', encoding = 'UTF-8-SIG')
+        self.plush = self.plush.append(self.plus_tmp)
+        self.plush = self.plush.drop_duplicates(subset = ['과목명', '교수명', '소속', '과목코드'])
+        self.plush.reset_index(drop = True, inplace = True)
         print("전공 과목 리스트는 다음과 같습니다.\n")
-        print(sorted(list(pd.read_csv(self.path + '/result/source/final_result.csv', encoding = 'UTF-8-SIG')['소속'].unique())))
+        print(sorted(list(self.plush['소속'].unique())))
         display(self.back5)
         self.back5.on_click(self.show_back)
 #---------------------------------------------------------------------------------------------------------------------------------------------------------        
     ''' 종료 버튼 정의 부분 '''
     def clear_all(self, change): # 클릭시 인터페이스 종료
-        print("에브리타임 과목 추천 시스템을 종료하겠습니다")
+        print("에브리타임 과목 추천 시스템을 종료하겠습니다.")
         time.sleep(1.75)
         clear_output()
         
@@ -221,6 +255,11 @@ class Everytime:
 #---------------------------------------------------------------------------------------------------------------------------------------------------------    
     ''' 사용자 정보 수집 부분 '''
     def main_event1(self, change): # 사용자 기본 정보
+        clear_output()
+        self.how_to_use = Image.open(self.path + "/data/interface/image/start/how_to_use.png")
+        display(self.how_to_use)
+        time.sleep(5)
+        clear_output()
         self.delete_information()
         clear_output()
         for bot in self.user_buttons1:
@@ -273,7 +312,7 @@ class Everytime:
         self.callback.on_click(self.reback2)
         
     def save_information(self, change):
-        if int(self.user_info[4]) != 9:
+        if int(self.user_info[4]) < 9:
             self.user_dict = {'학번' : self.user_info[0], '이름' : self.user_info[1], '본전공' : self.user_info[2], '복수전공' : self.user_info[3], '학기수' : self.user_info[4],
                                           '전공과목수' : self.user_info[5], '교양과목수' : self.user_info[6], 
                                           '필수과목1' : self.user_info[7], '필수과목2' : self.user_info[8], '필수과목3' : self.user_info[9],
@@ -285,10 +324,10 @@ class Everytime:
             self.total_info.to_csv(self.path_user + 'userDB.csv', encoding = 'UTF-8-SIG', index = False)
             print('저장되었습니다')
         else:
-            print('막학기는 싸인 다 해줍니당 ㅎ__ㅎ')
+            print('막학기생은 추천 시스템을 활용하지 않아도 괜찮습니다.')
             time.sleep(5)
             clear_output()
-            print("언제까지 기다리실건가요? 쥬피터 노트북을 다시 실행시켜주세요 ㅎ__ㅎ")
+            print("언제까지 기다리실건가요? 쥬피터 노트북을 다시 실행시켜주세요. ㅎ__ㅎ")
             
     def delete_information(self):
         clear_output()
@@ -296,16 +335,201 @@ class Everytime:
         deleting.run()
         time.sleep(0.5)
         clear_output()
+#---------------------------------------------------------------------------------------------------------------------------------------------------------
+    def visualization(self):
+        self.path = '.'
+        self.answer_path = self.path + '/result/answer/'
+        self.class_path = self.path + '/data/interface/image/course/'
+        self.font_path = self.path + '/data/interface/font/'
+        self.bond_path = self.path + '/data/interface/image/bond/'
+        self.image_path = self.path + '/result/imageDB/'
+        # -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+        def get_filename(user, num):
+            for i in sorted(os.listdir(self.answer_path), reverse = True):
+                if user + '(' + str(num) + ')' in i:
+                    return i
+        def make_df(filename):
+            df = pd.read_csv(self.answer_path + filename, encoding = 'UTF-8-SIG')
+            df['수업길이'] = ''
+            for i in range(len(df)):
+                tmp = df['수업시간'][i].split('~')
+                tmp = [tmp[x].split(':') for x in range(2)]        
+                period = str(dt.datetime(2021, 3, 27, int(tmp[1][0]), int(tmp[1][1])) - dt.datetime(2021, 3, 27, int(tmp[0][0]), int(tmp[0][1]))).split(':')[:2]
+                period[0] = '0' + period[0]
+                period = ''.join(period)
+                df['수업길이'][i] = period
+                if df.isnull().sum().sum() != 0:
+                    print("에러가 발생했습니다. ipynb파일을 재실행해주세요!!!")
+                    time.sleep(120)
+            return df
+        # -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+        def make_course(i):
+            # 과목판 불러오기 및 기타 설정
+            image = Image.open(self.class_path + self.answer['수업길이'][i] + '.jpg')
+
+            back_im = image.copy()
+            draw = ImageDraw.Draw(back_im)
+            font_rt = ImageFont.truetype(font = self.font_path + 'NanumSquareB.ttf', size = 17)
+            image_width, image_height = image.size
+
+            # 과목판 색 수정
+            draw.rectangle([(2.7, 2.7), (image_width-2.7, image_height-2.7)], fill=(np.random.randint(200,255), np.random.randint(200,255), np.random.randint(200,255)))
+
+            # 과목 정보 넣기
+            prof = self.answer['교수특징'][i] 
+            prof_list = [prof[i:i+2] for i in range(0, len(prof), 2)]
+            ratio = self.answer['경쟁점수'][i]
+            honey = self.answer['꿀점수'][i]
+
+            # 정보1 : 교수 특징 & 경쟁 점수
+            prof_dict = {'꿀귀' : 'prof_cute.png', '천사' : 'prof_angel.png', '악마' : 'prof_devil.png', '도도' : 'prof_dodo.png', '꼰대' : 'prof_ggon.png'}
+            if prof_list[0] == '없음':
+                if ratio == '알수없음':
+                    pass
+                else:
+                    ratio = round(float(ratio), 1)
+                    ratio_im = Image.open(self.class_path + 'ratio.png').resize((60, 35))
+                    ratio_mask = Image.open(self.class_path + 'ratio.png').resize(ratio_im.size)
+                    back_im.paste(ratio_im, (image_width - 310, image_height - 43), ratio_mask)
+                    draw.text((image_width - 304, image_height - 37), str(ratio), font = font_rt, fill = 'black')
+
+            elif len(prof_list) == 1:
+                prof1 = Image.open(self.class_path + prof_dict[prof_list[0]]).resize((50, 35))
+                mask1 = Image.open(self.class_path + prof_dict[prof_list[0]]).resize(prof1.size)
+                back_im.paste(prof1, (image_width - 310, image_height - 43), mask1)
+                if ratio == '알수없음':
+                    pass
+                else:
+                    ratio = round(float(ratio), 1)
+                    ratio_im = Image.open(self.class_path + 'ratio.png').resize((60, 35))
+                    ratio_mask = Image.open(self.class_path + 'ratio.png').resize(ratio_im.size)
+                    back_im.paste(ratio_im, (image_width - 255, image_height - 43), ratio_mask)
+                    draw.text((image_width - 249, image_height - 37), str(ratio), font=font_rt, fill = 'black')
+
+            elif len(prof_list) == 2:
+                prof1 = Image.open(self.class_path + prof_dict[prof_list[0]]).resize((50, 35))
+                prof2 = Image.open(self.class_path + prof_dict[prof_list[1]]).resize((50, 35))
+                mask1 = Image.open(self.class_path + prof_dict[prof_list[0]]).resize(prof1.size)
+                mask2 = Image.open(self.class_path + prof_dict[prof_list[1]]).resize(prof2.size)
+                back_im.paste(prof1, (image_width - 310, image_height - 43), mask1) 
+                back_im.paste(prof2, (image_width - 255, image_height - 43), mask2)
+                if ratio == '알수없음':
+                    pass
+                else:
+                    ratio = round(float(ratio), 1)
+                    ratio_im = Image.open(self.class_path + 'ratio.png').resize((60, 35))
+                    ratio_mask = Image.open(self.class_path + 'ratio.png').resize(ratio_im.size)
+                    back_im.paste(ratio_im, (image_width - 200, image_height - 43), ratio_mask)
+                    draw.text((image_width - 194, image_height - 37), str(ratio), font=font_rt, fill = 'black')
+
+            elif len(prof_list) == 3:
+                prof1 = Image.open(self.class_path + prof_dict[prof_list[0]]).resize((50, 35))
+                prof2 = Image.open(self.class_path + prof_dict[prof_list[1]]).resize((50, 35))
+                prof3 = Image.open(self.class_path + prof_dict[prof_list[2]]).resize((50, 35))
+                mask1 = Image.open(self.class_path + prof_dict[prof_list[0]]).resize(prof1.size)
+                mask2 = Image.open(self.class_path + prof_dict[prof_list[1]]).resize(prof2.size)
+                mask3 = Image.open(self.class_path + prof_dict[prof_list[2]]).resize(prof3.size)
+                back_im.paste(prof1, (image_width - 310, image_height - 43), mask1) 
+                back_im.paste(prof2, (image_width - 255, image_height - 43), mask2)
+                back_im.paste(prof3, (image_width - 200, image_height - 43), mask3)
+                if ratio == '알수없음':
+                    pass
+                else:
+                    ratio = round(float(ratio), 1)
+                    ratio_im = Image.open(self.class_path + 'ratio.png').resize((60, 35))
+                    ratio_mask = Image.open(self.class_path + 'ratio.png').resize(ratio_im.size)
+                    back_im.paste(ratio_im, (image_width - 145, image_height - 43), ratio_mask)
+                    draw.text((image_width - 139, image_height - 37), str(ratio), font=font_rt, fill = 'black')
+
+            # 정보2 : 꿀 여부
+            if honey == 0:
+                pass
+            else:
+                honey_im = Image.open(self.class_path + 'honey.png').resize((45, 42))
+                honey_mask = Image.open(self.class_path + 'honey.png').resize(honey_im.size)
+                back_im.paste(honey_im, (image_width - 53, image_height - 53), honey_mask) 
+
+            # 정보3 : 과목명, 교수명, 강의실 
+            def isHangul(text):
+                hanCount = len(re.findall(u'[\u3130-\u318F\uAC00-\uD7A3]+', text))
+                return hanCount > 0
+
+            def draw_text(image, index):
+                draw = ImageDraw.Draw(image)
+                image_width, image_height = image.size
+                start_height = 12
+
+                txt_lec = self.answer['과목명'][index]
+                if self.answer['강의실'][index] == '없음':
+                    txt_pf = self.answer['교수명'][index]
+                else:
+                    txt_pf = self.answer['교수명'][index] + '  ' + self.answer['강의실'][index]
+
+                font_lec = ImageFont.truetype(font = self.font_path + 'NanumSquareB.ttf', size =24)
+                font_pf = ImageFont.truetype(font = self.font_path + 'NanumSquareB.ttf', size = 18)
+
+                if isHangul(txt_lec):
+                    lines = textwrap.wrap(txt_lec, width = 13)  #width 체크하기
+                    if len(lines) >= 3:
+                        lines = [lines[0], lines[1] + '...']
+                else:
+                    lines = textwrap.wrap(txt_lec, width = 20)
+                    if len(lines) >= 3:
+                        lines = [lines[0], lines[1] + '...']
+
+                for line in lines:
+                    line_width, line_height = font_lec.getsize(line)
+                    draw.text((13, start_height), line, font = font_lec, fill = 'black')
+                    start_height += line_height+1
+
+                line_width, line_height = font_pf.getsize(txt_pf)
+                draw.text((14, start_height+4), txt_pf, font = font_pf, fill = 'gray')
+                return image
+
+            course_im = draw_text(back_im, i)
+            return course_im
+        # -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+        def display_course(bond, course_im):
+            day = self.answer['수업요일'][i]
+            time = self.answer['수업시간'][i].split('~')[0]
+            if len(day) == 1:
+                bond.paste(course_im, (self.bond_x[day], self.bond_y[time]))
+            else:
+                bond.paste(course_im, (self.bond_x[day[0]], self.bond_y[time]))
+                bond.paste(course_im, (self.bond_x[day[1]], self.bond_y[time]))   
+            return bond
+        # -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+        # 사용자 정보
+        self.user = Everytime.student_name.value
+        self.num = Everytime.student_id.value
+        self.answer = make_df(get_filename(self.user, self.num))
+
+        # 시간표 만들기
+        self.bond = Image.open(self.bond_path + 'bond.jpg')
+        self.bond_x = {'월':177, '화':500, '수':823, '목':1146, '금':1468}
+        self.bond_y = {'09:00' : 85, '10:00' : 197, '10:30' : 252, '12:00' : 419, '13:00' : 530, '13:30' : 585, '14:00' : 641, '14:30' : 697, '15:00' : 752, '15:30' : 808, 
+                                  '15:40' : 826, '16:30' : 918, '16:40' : 937, '17:00' : 974, '17:30' : 1029, '18:00' : 1085, '18:30' : 1140, '19:30' : 1251}
+
+        for i in range(0, len(self.answer)):
+            self.bond = display_course(self.bond, make_course(i))
+
+        # 시간표 저장 및 보여주기
+        self.bond.save(self.image_path + get_filename(self.user, self.num)[:-4] + '.jpg')
+        self.bond.show()
 #---------------------------------------------------------------------------------------------------------------------------------------------------------        
     def start_recommend(self, change):
         clear_output()
         coursing = Coursing()
         coursing.run()
-        print("시간표 추천이 완료되었습니다. 60초 후 처음 화면으로 돌아갑니다 😉 (만족스럽지 않으시다면, 반드시 들어야 하는 과목을 추가해보세요)")
-        time.sleep(60)
+        time.sleep(1)
+        
+        clear_output()
+        self.visualization()
+        print("시간표 추천이 완료되었습니다.  60초 후 처음 화면으로 돌아갑니다. 😉 (만족스럽지 않으시다면, 반드시 들어야 하는 과목을 추가해보세요)")
+        
+        time.sleep(40)
         clear_output()
         self.run()
-        
 #---------------------------------------------------------------------------------------------------------------------------------------------------------        
     def data_setting(self, change):
         clear_output()
@@ -314,9 +538,9 @@ class Everytime:
         
     def sg_start(self, change):
         clear_output()
-        print("2016년 1학기부터 2021년 1학기까지의 서강대 강의 과목명을 전처리 중입니다... (약 2초~5초 소요)")
+        print("데이터 수집을 위해 2016년 1학기부터 2021년 1학기까지의 서강대 강의 과목명을 전처리 중입니다... (약 2초~5초 소요)")
         self.course_start()
-        print("2016년 1학기부터 2021년 1학기까지의 서강대 강의 경쟁률을 전처리 중입니다... (약 2초~5초 소요)")
+        print("데이터 수집을 위해 2016년 1학기부터 2021년 1학기까지의 서강대 강의 경쟁률을 전처리 중입니다... (약 2초~5초 소요)")
         self.competition_start()
         time.sleep(3)
         clear_output()
@@ -327,7 +551,7 @@ class Everytime:
         
     def et_start(self, change):
         clear_output()
-        print("2016년 1학기부터 2021년 1학기까지의 에타 강의 목록 및 강의평을 크롤링 중입니다... (약 5시간~6시간 소요)")
+        print("2016년 1학기부터 2021년 1학기까지의 에타 강의 목록 및 강의평을 크롤링 중입니다... (약 12시간~14시간 소요)")
         self.et_crawling_start()
         
     def reback(self, change):
@@ -353,7 +577,7 @@ class Everytime:
         evaluation = Evaluation()
         schedule.run()
         evaluation.run()
-        print("데이터 수집이 모두 완료되었습니다")
+        print("데이터 수집이 모두 완료되었습니다.")
         time.sleep(3)
         clear_output()
         self.run()
@@ -365,12 +589,12 @@ class Everytime:
         
     def pre_start(self, change):
         clear_output()
-        print("2016년 1학기부터 2021년 1학기까지의 서강대 강의 과목명을 전처리 중입니다... (약 2초~5초 소요)")
+        print("데이터 수집을 위해 2016년 1학기부터 2021년 1학기까지의 서강대 강의 과목명을 전처리 중입니다... (약 2초~5초 소요)")
         self.course_start()
-        time.sleep(1.5)
-        print("2016년 1학기부터 2021년 1학기까지의 서강대 강의 경쟁률을 전처리 중입니다... (약 2초~5초 소요)")
+        print("데이터 수집을 위해 2016년 1학기부터 2021년 1학기까지의 서강대 강의 경쟁률을 전처리 중입니다... (약 2초~5초 소요)")
         self.competition_start()
-        time.sleep(1.5)
+        time.sleep(2)
+        clear_output()
         print("과목별 예상 경쟁률을 산정중입니다... (약 2초~3초 소요)")
         self.ratio_start()
         time.sleep(1.5)
@@ -386,10 +610,10 @@ class Everytime:
         clear_output()
         print("최종 데이터를 병합중입니다.")
         self.merge_start()
-        time.sleep(0.5)
+        time.sleep(2)
         clear_output()
         print("데이터 전처리를 완료하였습니다.")
-        time.sleep(1.5)
+        time.sleep(2)
         clear_output()
         self.run()
         
@@ -403,17 +627,13 @@ class Everytime:
         
     def merge_start(self):
         merg = Merge()
-        merg.run()
-#---------------------------------------------------------------------------------------------------------------------------------------------------------    
-#     def remind(self): # 내 학번/이름 입력하면, 저장되어있던 결과 다시 보여주기
-
-
-#---------------------------------------------------------------------------------------------------------------------------------------------------------    
+        merg.run()        
+#---------------------------------------------------------------------------------------------------------------------------------------------------------
     ''' 메인 함수에 들어가는 변수에 값을 할당하는 부분 '''
     style = {'description_width' : 'initial'}
-    opt = ['없음', '경영학', '경제학', '공공인재', '교육문화', '국어국문학', '국제인문학부', '글로벌한국학', '기계공학', '물리학', '미국문화', '미디어&엔터테인먼트', '바이오융합기술', '빅데이터사이언스', '사학', '사회학', '생명과학', '수학', '스타트업', '스포츠미디어', '신문방송학', '심리학', '아트&테크놀로지', '여성학', '영미어문', '유럽문화', '융합소프트웨어', '인공지능', '일본문화', '자연과학부', '전인교육원', '전자공학', '정치외교학', '정치학/경제학/철학', '종교학', '중국문화', '지식융합미디어학부', '철학', '컴퓨터공학', '한국발전과국제개발협력', '한국사회문화', '화공생명공학', '화학']
-    opt1 = ['경영학', '경제학', '공공인재', '교육문화', '국어국문학', '국제인문학부', '글로벌한국학', '기계공학', '물리학', '미국문화', '미디어&엔터테인먼트', '바이오융합기술', '빅데이터사이언스', '사학', '사회학', '생명과학', '수학', '스타트업', '스포츠미디어', '신문방송학', '심리학', '아트&테크놀로지', '여성학', '영미어문', '유럽문화', '융합소프트웨어', '인공지능', '일본문화', '자연과학부', '전인교육원', '전자공학', '정치외교학', '정치학/경제학/철학', '종교학', '중국문화', '지식융합미디어학부', '철학', '컴퓨터공학', '한국발전과국제개발협력', '한국사회문화', '화공생명공학', '화학']
-    opt2 = ['없음', '경영학', '경제학', '공공인재', '교육문화', '국어국문학', '국제인문학부', '글로벌한국학', '기계공학', '물리학', '미국문화', '미디어&엔터테인먼트', '바이오융합기술', '빅데이터사이언스', '사학', '사회학', '생명과학', '수학', '스타트업', '스포츠미디어', '신문방송학', '심리학', '아트&테크놀로지', '여성학', '영미어문', '유럽문화', '융합소프트웨어', '인공지능', '일본문화', '자연과학부', '전인교육원', '전자공학', '정치외교학', '정치학/경제학/철학', '종교학', '중국문화', '지식융합미디어학부', '철학', '컴퓨터공학', '한국발전과국제개발협력', '한국사회문화', '화공생명공학', '화학']
+    opt = ['없음', '경영학', '경제학', '공공인재', '교육문화', '국어국문학', '국제인문학부', '글로벌한국학', '기계공학', '물리학', '미국문화', '미디어&엔터테인먼트', '바이오융합기술', '빅데이터사이언스', '사학', '사회학', '생명과학', '수학', '스타트업', '스포츠미디어', '신문방송학', '심리학', '아트&테크놀로지', '여성학', '영미어문', '유럽문화', '융합소프트웨어', '인공지능', '일본문화', '자연과학부', '전인교육원', '전자공학', '정치외교학', '정치학/경제학/철학', '종교학', '중국문화', '지식융합미디어학부', '철학', '커뮤니케이션학', '컴퓨터공학', '한국발전과국제개발협력', '한국사회문화', '화공생명공학', '화학']
+    opt1 = ['경영학', '경제학', '공공인재', '교육문화', '국어국문학', '국제인문학부', '글로벌한국학', '기계공학', '물리학', '미국문화', '미디어&엔터테인먼트', '바이오융합기술', '빅데이터사이언스', '사학', '사회학', '생명과학', '수학', '스타트업', '스포츠미디어', '신문방송학', '심리학', '아트&테크놀로지', '여성학', '영미어문', '유럽문화', '융합소프트웨어', '인공지능', '일본문화', '자연과학부', '전인교육원', '전자공학', '정치외교학', '정치학/경제학/철학', '종교학', '중국문화', '지식융합미디어학부', '철학', '커뮤니케이션학', '컴퓨터공학', '한국발전과국제개발협력', '한국사회문화', '화공생명공학', '화학']
+    opt2 = ['없음', '경영학', '경제학', '공공인재', '교육문화', '국어국문학', '국제인문학부', '글로벌한국학', '기계공학', '물리학', '미국문화', '미디어&엔터테인먼트', '바이오융합기술', '빅데이터사이언스', '사학', '사회학', '생명과학', '수학', '스타트업', '스포츠미디어', '신문방송학', '심리학', '아트&테크놀로지', '여성학', '영미어문', '유럽문화', '융합소프트웨어', '인공지능', '일본문화', '자연과학부', '전인교육원', '전자공학', '정치외교학', '정치학/경제학/철학', '종교학', '중국문화', '지식융합미디어학부', '철학', '커뮤니케이션학', '컴퓨터공학', '한국발전과국제개발협력', '한국사회문화', '화공생명공학', '화학']
     
     # main event 1 (user information)
     student_id = widgets.Text(value = None, placeholder = '20196789', description = '학번', disabled = False, style = style, layout = Layout(width = 'auto', height = 'auto'))
@@ -421,7 +641,6 @@ class Everytime:
     main_major = widgets.Dropdown(options = opt1, value = None, description = '본전공', disabled = False, style = style, layout = Layout(width = 'auto', height = 'auto'))
     sub_major = widgets.Dropdown(options = opt2, value = None, description = '복수전공', disabled = False, style = style, layout = Layout(width = 'auto', height = 'auto'))
     session = widgets.Text(value = None, placeholder = '5', description = '이수 학기수(이번 학기 포함)', style = style, layout = Layout(width = 'auto', height = 'auto'))
-#     how_many = widgets.IntSlider(value = 15, min = 3, max = 23, step = 1, description = '이번 학기 신청 학점', disabled = False, style = style, layout = Layout(width = 'auto', height = 'auto'))
     main_many = widgets.IntSlider(value = 3, min = 0, max = 9, step = 1, description = '이번 학기에 들을 전공 과목수', disabled = False, style = style, layout = Layout(width = 'auto', height = 'auto'))
     sub_many = widgets.IntSlider(value = 3, min = 0, max = 6, step = 1, description = '이번 학기에 들을 교양 과목수', disabled = False, style = style, layout = Layout(width = 'auto', height = 'auto'))
     essential_course1 = widgets.Text(value = None, placeholder = '응용경영통계', description = '반드시 들어야 하는 과목(1)', disabled = False, style = style, layout = Layout(width = 'auto', height = 'auto'))
@@ -477,7 +696,7 @@ class Everytime:
     sg1 = widgets.Button(description = '전처리를 진행하시겠습니까?', button_style = 'success', layout = Layout(width = 'auto', height = 'auto'))
     
     # everytime button
-    et1 = widgets.Button(description = '크롤링을 진행하시겠습니까? (매우 오랜 시간이 소요될 수 있습니다)', button_style = 'danger', layout = Layout(width = 'auto', height = 'auto'))
+    et1 = widgets.Button(description = '크롤링을 진행하시겠습니까? (매우 오랜 시간이 소요될 수 있습니다.)', button_style = 'danger', layout = Layout(width = 'auto', height = 'auto'))
     
     # preprocessing button
     pre1 = widgets.Button(description = '전처리를 진행하시겠습니까?', button_style = 'success', layout = Layout(width = 'auto', height = 'auto'))

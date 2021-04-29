@@ -190,7 +190,7 @@ class Schedule:
         time.sleep(3)
         
         delete_adv_1()
-        self.year = 2020
+        self.year = 2016
         self.semester = 1
         while True:
             # 1. 크롤링 시작
@@ -214,8 +214,8 @@ class Schedule:
             if (self.year, self.semester) == (2021, 2):
                 break
             else:
-                self.plus_schedule = pd.read_csv(self.path_et_schedule + 'schedule_' + str(self.year) + '_' + str(self.semester) + '.csv', encoding = 'UTF-8-SIG', index = False)
-                self.result_final = result_final.append(self.plus_schedule)
+                self.plus_schedule = pd.read_csv(self.path_et_schedule + 'schedule_' + str(self.year) + '_' + str(self.semester) + '.csv', encoding = 'UTF-8-SIG')
+                self.result_final = self.result_final.append(self.plus_schedule)
                 self.result_final.to_csv(self.path_et_schedule + 'schedule_final.csv', encoding = 'UTF-8-SIG', index = False)
 
             # 2. 연도/학기 재설정

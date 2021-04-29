@@ -1,6 +1,7 @@
 from tqdm import tqdm
 import pandas as pd
 import numpy as np
+import time
 import ast
 import re
 import os
@@ -137,27 +138,40 @@ class Merge:
         self.et_schedule_2021_1.dropna(subset = ['수업시간/강의실', '권장학년'], inplace = True)
         self.et_schedule_2021_1.reset_index(drop = True, inplace = True)
         
+        def change_day(x):
+            x = str(x)
+            x = ''.join(x)
+            x = re.sub(",", "", x)
+            x = re.sub(" ", "", x)
+            x = re.sub("'", "", x)
+            return x
+        
         self.et_schedule_2019_1['수업요일'] = self.et_schedule_2019_1['수업시간/강의실'].progress_apply(lambda x : withdraw_day(x))
+        self.et_schedule_2019_1['수업요일'] = self.et_schedule_2019_1['수업요일'].progress_apply(lambda x : change_day(x))
         self.et_schedule_2019_1['수업시간'] = self.et_schedule_2019_1['수업시간/강의실'].progress_apply(lambda x : withdraw_time(x))
         self.et_schedule_2019_1['강의실'] = self.et_schedule_2019_1['수업시간/강의실'].progress_apply(lambda x : withdraw_class(x))
         self.et_schedule_2019_1['권장학년'] = self.et_schedule_2019_1['권장학년'].progress_apply(lambda x : withdraw_grade(x))
 
         self.et_schedule_2019_2['수업요일'] = self.et_schedule_2019_2['수업시간/강의실'].progress_apply(lambda x : withdraw_day(x))
+        self.et_schedule_2019_2['수업요일'] = self.et_schedule_2019_2['수업요일'].progress_apply(lambda x : change_day(x))
         self.et_schedule_2019_2['수업시간'] = self.et_schedule_2019_2['수업시간/강의실'].progress_apply(lambda x : withdraw_time(x))
         self.et_schedule_2019_2['강의실'] = self.et_schedule_2019_2['수업시간/강의실'].progress_apply(lambda x : withdraw_class(x))
         self.et_schedule_2019_2['권장학년'] = self.et_schedule_2019_2['권장학년'].progress_apply(lambda x : withdraw_grade(x))
 
         self.et_schedule_2020_1['수업요일'] = self.et_schedule_2020_1['수업시간/강의실'].progress_apply(lambda x : withdraw_day(x))
+        self.et_schedule_2020_1['수업요일'] = self.et_schedule_2020_1['수업요일'].progress_apply(lambda x : change_day(x))
         self.et_schedule_2020_1['수업시간'] = self.et_schedule_2020_1['수업시간/강의실'].progress_apply(lambda x : withdraw_time(x))
         self.et_schedule_2020_1['강의실'] = self.et_schedule_2020_1['수업시간/강의실'].progress_apply(lambda x : withdraw_class(x))
         self.et_schedule_2020_1['권장학년'] = self.et_schedule_2020_1['권장학년'].progress_apply(lambda x : withdraw_grade(x))
 
         self.et_schedule_2020_2['수업요일'] = self.et_schedule_2020_2['수업시간/강의실'].progress_apply(lambda x : withdraw_day(x))
+        self.et_schedule_2020_2['수업요일'] = self.et_schedule_2020_2['수업요일'].progress_apply(lambda x : change_day(x))
         self.et_schedule_2020_2['수업시간'] = self.et_schedule_2020_2['수업시간/강의실'].progress_apply(lambda x : withdraw_time(x))
         self.et_schedule_2020_2['강의실'] = self.et_schedule_2020_2['수업시간/강의실'].progress_apply(lambda x : withdraw_class(x))
         self.et_schedule_2020_2['권장학년'] = self.et_schedule_2020_2['권장학년'].progress_apply(lambda x : withdraw_grade(x))
 
         self.et_schedule_2021_1['수업요일'] = self.et_schedule_2021_1['수업시간/강의실'].progress_apply(lambda x : withdraw_day(x))
+        self.et_schedule_2021_1['수업요일'] = self.et_schedule_2021_1['수업요일'].progress_apply(lambda x : change_day(x))
         self.et_schedule_2021_1['수업시간'] = self.et_schedule_2021_1['수업시간/강의실'].progress_apply(lambda x : withdraw_time(x))
         self.et_schedule_2021_1['강의실'] = self.et_schedule_2021_1['수업시간/강의실'].progress_apply(lambda x : withdraw_class(x))
         self.et_schedule_2021_1['권장학년'] = self.et_schedule_2021_1['권장학년'].progress_apply(lambda x : withdraw_grade(x))
@@ -167,41 +181,73 @@ class Merge:
         self.et_schedule_2020_1 = self.et_schedule_2020_1.iloc[:, [0, 1, 2, 3, 5, 6, 7, 8]]
         self.et_schedule_2020_2 = self.et_schedule_2020_2.iloc[:, [0, 1, 2, 3, 5, 6, 7, 8]]
         self.et_schedule_2021_1 = self.et_schedule_2021_1.iloc[:, [0, 1, 2, 3, 5, 6, 7, 8]]
+        
 #----------------------------------------------------------------------------------------------------------------------------------------------------------
-        self.sg_courses_2019_1 = self.sg_courses_2019_1.iloc[:, [3, 6, 10]]
+        self.sg_courses_2019_1 = self.sg_courses_2019_1.iloc[:, [3, 6, 8, 10]]
         self.sg_courses_2019_1.dropna(subset = ['교수진'], inplace = True)
+        self.sg_courses_2019_1.dropna(subset = ['수업시간/강의실'], inplace = True)
+        self.sg_courses_2019_1['수업요일'] = self.sg_courses_2019_1['수업시간/강의실'].progress_apply(lambda x : withdraw_day(x))
+        self.sg_courses_2019_1['수업요일'] = self.sg_courses_2019_1['수업요일'].progress_apply(lambda x : change_day(x))
+        self.sg_courses_2019_1['수업시간'] = self.sg_courses_2019_1['수업시간/강의실'].progress_apply(lambda x : withdraw_time(x))
+        self.sg_courses_2019_1['강의실'] = self.sg_courses_2019_1['수업시간/강의실'].progress_apply(lambda x : withdraw_class(x))
         self.sg_courses_2019_1.reset_index(drop = True, inplace = True)
-        self.sg_courses_2019_1.columns = ['소속', '과목명', '교수명']
+        self.sg_courses_2019_1 = self.sg_courses_2019_1.iloc[:, [0, 1, 3, 4, 5, 6]]
+        self.sg_courses_2019_1.columns = ['소속', '과목명', '교수명', '수업요일', '수업시간', '강의실']
 
-        self.sg_courses_2019_2 = self.sg_courses_2019_2.iloc[:, [3, 6, 10]]
+        self.sg_courses_2019_2 = self.sg_courses_2019_2.iloc[:, [3, 6, 8, 10]]
         self.sg_courses_2019_2.dropna(subset = ['교수진'], inplace = True)
+        self.sg_courses_2019_2.dropna(subset = ['수업시간/강의실'], inplace = True)
+        self.sg_courses_2019_2['수업요일'] = self.sg_courses_2019_2['수업시간/강의실'].progress_apply(lambda x : withdraw_day(x))
+        self.sg_courses_2019_2['수업요일'] = self.sg_courses_2019_2['수업요일'].progress_apply(lambda x : change_day(x))
+        self.sg_courses_2019_2['수업시간'] = self.sg_courses_2019_2['수업시간/강의실'].progress_apply(lambda x : withdraw_time(x))
+        self.sg_courses_2019_2['강의실'] = self.sg_courses_2019_2['수업시간/강의실'].progress_apply(lambda x : withdraw_class(x))
         self.sg_courses_2019_2.reset_index(drop = True, inplace = True)
-        self.sg_courses_2019_2.columns = ['소속', '과목명', '교수명']
+        self.sg_courses_2019_2 = self.sg_courses_2019_2.iloc[:, [0, 1, 3, 4, 5, 6]]
+        self.sg_courses_2019_2.columns = ['소속', '과목명', '교수명', '수업요일', '수업시간', '강의실']
 
-        self.sg_courses_2020_1 = self.sg_courses_2020_1.iloc[:, [3, 6, 10]]
+        self.sg_courses_2020_1 = self.sg_courses_2020_1.iloc[:, [3, 6, 8, 10]]
         self.sg_courses_2020_1.dropna(subset = ['교수진'], inplace = True)
+        self.sg_courses_2020_1.dropna(subset = ['수업시간/강의실'], inplace = True)
+        self.sg_courses_2020_1['수업요일'] = self.sg_courses_2020_1['수업시간/강의실'].progress_apply(lambda x : withdraw_day(x))
+        self.sg_courses_2020_1['수업요일'] = self.sg_courses_2020_1['수업요일'].progress_apply(lambda x : change_day(x))
+        self.sg_courses_2020_1['수업시간'] = self.sg_courses_2020_1['수업시간/강의실'].progress_apply(lambda x : withdraw_time(x))
+        self.sg_courses_2020_1['강의실'] = self.sg_courses_2020_1['수업시간/강의실'].progress_apply(lambda x : withdraw_class(x))
         self.sg_courses_2020_1.reset_index(drop = True, inplace = True)
-        self.sg_courses_2020_1.columns = ['소속', '과목명', '교수명']
+        self.sg_courses_2020_1 = self.sg_courses_2020_1.iloc[:, [0, 1, 3, 4, 5, 6]]
+        self.sg_courses_2020_1.columns  = ['소속', '과목명', '교수명', '수업요일', '수업시간', '강의실']
 
-        self.sg_courses_2020_2 = self.sg_courses_2020_2.iloc[:, [3, 6, 10]]
+        self.sg_courses_2020_2 = self.sg_courses_2020_2.iloc[:, [3, 6, 8, 10]]
         self.sg_courses_2020_2.dropna(subset = ['교수진'], inplace = True)
+        self.sg_courses_2020_2.dropna(subset = ['수업시간/강의실'], inplace = True)
+        self.sg_courses_2020_2['수업요일'] = self.sg_courses_2020_2['수업시간/강의실'].progress_apply(lambda x : withdraw_day(x))
+        self.sg_courses_2020_2['수업요일'] = self.sg_courses_2020_2['수업요일'].progress_apply(lambda x : change_day(x))
+        self.sg_courses_2020_2['수업시간'] = self.sg_courses_2020_2['수업시간/강의실'].progress_apply(lambda x : withdraw_time(x))
+        self.sg_courses_2020_2['강의실'] = self.sg_courses_2020_2['수업시간/강의실'].progress_apply(lambda x : withdraw_class(x))
         self.sg_courses_2020_2.reset_index(drop = True, inplace = True)
-        self.sg_courses_2020_2.columns = ['소속', '과목명', '교수명']
+        self.sg_courses_2020_2 = self.sg_courses_2020_2.iloc[:, [0, 1, 3, 4, 5, 6]]
+        self.sg_courses_2020_2.columns = ['소속', '과목명', '교수명', '수업요일', '수업시간', '강의실']
 
-        self.sg_courses_2021_1 = self.sg_courses_2021_1.iloc[:, [3, 6, 10]]
+        self.sg_courses_2021_1 = self.sg_courses_2021_1.iloc[:, [3, 6, 8, 10]]
         self.sg_courses_2021_1.dropna(subset = ['교수진'], inplace = True)
+        self.sg_courses_2021_1.dropna(subset = ['수업시간/강의실'], inplace = True)
+        self.sg_courses_2021_1['수업요일'] = self.sg_courses_2021_1['수업시간/강의실'].progress_apply(lambda x : withdraw_day(x))
+        self.sg_courses_2021_1['수업요일'] = self.sg_courses_2021_1['수업요일'].progress_apply(lambda x : change_day(x))
+        self.sg_courses_2021_1['수업시간'] = self.sg_courses_2021_1['수업시간/강의실'].progress_apply(lambda x : withdraw_time(x))
+        self.sg_courses_2021_1['강의실'] = self.sg_courses_2021_1['수업시간/강의실'].progress_apply(lambda x : withdraw_class(x))
         self.sg_courses_2021_1.reset_index(drop = True, inplace = True)
-        self.sg_courses_2021_1.columns = ['소속', '과목명', '교수명']
+        self.sg_courses_2021_1 = self.sg_courses_2021_1.iloc[:, [0, 1, 3, 4, 5, 6]]
+        self.sg_courses_2021_1.columns = ['소속', '과목명', '교수명', '수업요일', '수업시간', '강의실']
+
 #----------------------------------------------------------------------------------------------------------------------------------------------------------
         self.et_schedule_total = pd.concat([self.et_schedule_2019_1, self.et_schedule_2019_2, self.et_schedule_2020_1, self.et_schedule_2020_2, self.et_schedule_2021_1], axis = 0).reset_index(drop = True)
-        self.et_schedule_total.drop_duplicates(subset = ['과목명', '과목코드', '교수명'], inplace = True)
+        self.et_schedule_total.drop_duplicates(subset = ['과목명', '과목코드', '교수명', '수업요일', '수업시간'], inplace = True)
         self.et_schedule_total.reset_index(drop = True, inplace = True)
 
         self.sg_courses_total = pd.concat([self.sg_courses_2019_1, self.sg_courses_2019_2, self.sg_courses_2020_1, self.sg_courses_2020_2, self.sg_courses_2021_1], axis = 0).reset_index(drop = True)
-        self.sg_courses_total.drop_duplicates(subset = ['과목명', '교수명', '소속'], inplace = True)
+        self.sg_courses_total.drop_duplicates(subset = ['과목명', '교수명', '소속', '수업요일', '수업시간'], inplace = True)
         self.sg_courses_total.reset_index(drop = True, inplace = True)
-#----------------------------------------------------------------------------------------------------------------------------------------------------------
-        self.final_result = pd.merge(self.et_schedule_total, self.sg_courses_total, how = 'left', on = ['과목명', '교수명'])
+#---------------------------------------------------------------------------------------------------------------------------------------------------------- 여기서 사라짐
+        self.final_result = pd.merge(self.et_schedule_total, self.sg_courses_total, how = 'left', on = ['과목명', '교수명', '수업요일', '수업시간'])
         self.final_result = self.final_result.iloc[:, [8, 0, 1, 2, 3, 5, 6, 7, 4]]
 
         self.final_result = pd.merge(self.final_result, self.et_professor, how = 'left', on =['교수명'])
@@ -214,11 +260,11 @@ class Merge:
         self.final_result = pd.merge(self.final_result, self.com_score, how = 'left', on = ['과목명', '교수명'])
         self.final_result.reset_index(drop = True, inplace = True)
         self.final_result = self.final_result.iloc[:, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 12, 10, 11]]
-#----------------------------------------------------------------------------------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------------------------------------------------------------- 여기서 사라짐
         self.final_result.to_csv(self.path_save + 'mid_result.csv', encoding = 'UTF-8-SIG', index = False)
-    
-    def revise(self):
 #----------------------------------------------------------------------------------------------------------------------------------------------------------
+
+    def revise(self):
         def change_major(x):
             x = re.sub('전공', '', x)
             x = re.sub('연계', '', x)
@@ -240,6 +286,7 @@ class Merge:
 
             x = re.sub('1ntro', 'Intro', x)
             x = re.sub('1mmersive', 'Immersive', x)
+            x = re.sub('1T', 'IT', x)
             x = re.sub('A1', 'AI', x)
             x = re.sub('1nquiry', 'Inquiry', x)
             x = re.sub('1ntermediate', 'Intermediate', x)
@@ -276,9 +323,9 @@ class Merge:
                 elif x == 'Hantke, Steffen Horst':
                     return 'Hantke'
                 elif x == 'He, Ya Wen':
-                    return 'He'
+                    return 'He, Ya Wen'
                 elif x == 'Ho, Pak Tung':
-                    return 'Ho'
+                    return 'Ho, Pak Tung'
                 elif x == 'Iris Haydar Doruk':
                     return 'Doruk'
                 elif x == 'Jones, Ryan':
@@ -286,7 +333,7 @@ class Merge:
                 elif x == 'Jungk, Erik-Joachim':
                     return 'Jungk'
                 elif x == 'Kim, Halla':
-                    return 'Halla'
+                    return 'Kim, Halla'
                 elif x == 'Kim, Jae Pil':
                     return '김재필'
                 elif x == 'Lee, Hosuk Sean':
@@ -304,13 +351,13 @@ class Merge:
                 elif x == 'Swain, Nigel':
                     return 'Nigel'
                 elif x == 'Thigpen, Byron Douglas':
-                    return 'Douglas'
+                    return 'Byron'
                 elif x == 'Unger, Michael Anthony':
                     return 'Anthony'
                 elif x == 'Willers, Arthur Gregory':
                     return 'Gregory'
                 elif x == 'YANG, JUAN':
-                    return 'Juan'
+                    return 'YANG, JUAN'
                 elif x == 'Yoo Isaiah WonHo':
                     return '유원호'
                 else:
@@ -324,8 +371,9 @@ class Merge:
             return x
 
         def change_day(x):
-            x = ast.literal_eval(x)
-            x = ''.join(x)
+            x = x.lstrip('[')
+            x = x.rstrip(']')
+            x = x.strip()
             return x
 
         def change_recom(x):
@@ -335,11 +383,11 @@ class Merge:
 
         def change_proper(x):
             try:
-                x = re.sub('귀요미', '귀염', x)
+                x = re.sub('귀요미', '꿀귀', x)
                 x = re.sub('시크', '도도', x)
                 x = re.sub('엔젤', '천사', x)
                 x = re.sub('열정러', '', x)
-                x = re.sub('월급루팡', '', x)
+                x = re.sub('월급루팡', '악마', x)
                 x = re.sub('카리스마', '', x)
                 x = sorted(ast.literal_eval(x))
                 x = ''.join(x)
@@ -380,7 +428,7 @@ class Merge:
             self.revise[name] = self.revise[name].apply(lambda x : change_round(x))
 
         self.revise['경쟁점수'] = self.revise['경쟁점수'].apply(lambda x : change_comp(x))
-        self.revise.drop_duplicates(subset = ['과목명', '교수명', '과목코드'], inplace = True)
+        self.revise.drop_duplicates(subset = ['과목명', '교수명', '과목코드', '수업시간', '수업요일'], inplace = True)
         self.revise['꿀점수'] = self.revise['꿀점수'].fillna(self.hst)
         self.revise['배움점수'] = self.revise['배움점수'].fillna(self.sst)
         self.revise.reset_index(drop = True, inplace = True)
@@ -406,9 +454,9 @@ class Merge:
             self.ten2 = self.ten2['배움점수'].quantile(0.9)
             # 해당 전공 index 추출
             self.idx = self.revise[self.revise['소속'] == major].index
-            self.revise.loc[self.idx, '배움점수'] = self.revise.loc[self.idx, '배움점수'].apply(lambda x : 1 if x >= self.ten2 else 0)
-
+            self.revise.loc[self.idx, '배움점수'] = self.revise.loc[self.idx, '배움점수'].apply(lambda x : 1 if x >= self.ten2 else 0)        
 #----------------------------------------------------------------------------------------------------------------------------------------------------------
+        self.revise.columns = ['소속', '과목코드', '과목명', '교수명', '학점', '수업요일', '수업시간', '강의실', '권장학년', '교수특징', '경쟁점수', '꿀점수', '배움점수']
         self.revise.reset_index(drop = True, inplace = True)
         self.revise.to_csv(self.path_save + 'final_result.csv', encoding = 'UTF-8-SIG', index = False)
     

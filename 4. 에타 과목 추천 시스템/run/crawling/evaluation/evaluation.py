@@ -16,10 +16,10 @@ class Evaluation:
         self.path_sg_course_lst = self.path + '/data/sg_course_lst/'
         
     def crawling_evaluation(self):
-        url = 'https://everytime.kr/lecture'
-        driver = webdriver.Chrome('./driver/chromedriver.exe')
+        self.url = 'https://everytime.kr/lecture'
+        driver = webdriver.Chrome(self.path_driver + 'chromedriver.exe')
         driver.maximize_window()
-        driver.get(url)
+        driver.get(self.url)
         time.sleep(3)
         
         user_id = 'gi33808' # 에타 아이디 (추후 삭제 요망)
@@ -45,7 +45,7 @@ class Evaluation:
 #----------------------------------------------------------------------------------------------------------------------------------------------------------       
         def make_evaluation(name):
             mid_result = []
-            driver.get(url)
+            driver.get(self.url)
             time.sleep(3)
             driver.find_element_by_xpath('//*[@id="container"]/form/input[1]').click()
             course_search = driver.find_element_by_xpath('//*[@id="container"]/form/input[1]')
@@ -126,18 +126,55 @@ class Evaluation:
                     break
             return mid_result
 #----------------------------------------------------------------------------------------------------------------------------------------------------------
-        self.text_file = list(pd.read_csv(self.path_sg_course_lst + 'course_lst_total.txt', sep = ',').과목명.unique())
+        self.text_file = sorted(list(pd.read_csv(self.path_sg_course_lst + 'course_lst_total.txt', sep = ',').과목명.unique()))
         self.result_lst = []
-        for name in tqdm(self.text_file):
+        for name in tqdm(self.text_file[:300]): # 배치 사이즈 1
+            if name == self.text_file[0]: print("배치 사이즈1")
             try:
-                result_lst.append(make_evaluation(name))
-                print(name, ': 성공')
+                self.result_lst.append(make_evaluation(name))
             except:
                 print(name, ': 실패')
-                break
-        one_index = []
-        two_index = []
-        more_index = []
+                continue
+        for name in tqdm(self.text_file[300:600]): # 배치 사이즈 2
+            if name == self.text_file[300]: print("배치 사이즈2")
+            try:
+                self.result_lst.append(make_evaluation(name))
+            except:
+                print(name, ': 실패')
+                continue
+        for name in tqdm(self.text_file[600:900]): # 배치 사이즈 3
+            if name == self.text_file[600]: print("배치 사이즈3")
+            try:
+                self.result_lst.append(make_evaluation(name))
+            except:
+                print(name, ': 실패')
+        for name in tqdm(self.text_file[900:1200]): # 배치 사이즈 4
+            if name == self.text_file[900]: print("배치 사이즈4")
+            try:
+                self.result_lst.append(make_evaluation(name))
+            except:
+                print(name, ': 실패')
+        for name in tqdm(self.text_file[1200:1500]): # 배치 사이즈 5
+            if name == self.text_file[1200]: print("배치 사이즈5")
+            try:
+                self.result_lst.append(make_evaluation(name))
+            except:
+                print(name, ': 실패')
+        for name in tqdm(self.text_file[1500:1800]): # 배치 사이즈 6
+            if name == self.text_file[1500]: print("배치 사이즈6")
+            try:
+                self.result_lst.append(make_evaluation(name))
+            except:
+                print(name, ': 실패')
+        for name in tqdm(self.text_file[1800:]): # 배치 사이즈 7
+            if name == self.text_file[1800]: print("배치 사이즈7")
+            try:
+                self.result_lst.append(make_evaluation(name))
+            except:
+                print(name, ': 실패')
+        self.one_index = []
+        self.two_index = []
+        self.more_index = []
 #----------------------------------------------------------------------------------------------------------------------------------------------------------
         for i in range(len(self.result_lst)):
             if len(self.result_lst[i]) % 11 == 1:
@@ -145,6 +182,7 @@ class Evaluation:
             elif len(result_lst[i]) % 11 == 2:
                 self.two_index.append(i)
             else:
+                print("실패한 인덱스는 {0}번째 입니다.".format(i))
                 pass
 
         for i in self.one_index:

@@ -22,7 +22,7 @@ class Course:
             save_data.reset_index(inplace = True, drop = True)
             (save_data.과목명).to_csv(self.path_sg_course_lst + 'course_lst_' + str(year) + '_' + str(semester) + '.txt', sep = ',', index = False)
         # 3. 전체 과목 생성
-        for name in tqdm(data_lst):
+        for name in data_lst:
             if name != 'courses_2021_1.csv':
                 self.courses = pd.read_csv(self.path_sg_course_lst + name, encoding = 'UTF-8-SIG')
                 self.course_lst += list(self.courses['과목명'])

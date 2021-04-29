@@ -27,9 +27,9 @@ class Coursing:
         self.final_result = pd.read_csv(self.path_save + 'final_result.csv', encoding = 'UTF-8-SIG')
         self.userdb = pd.read_csv(self.path_db + 'userDB.csv', encoding = 'UTF-8-SIG')
         
-        # 임시로 추가한 인공지능, 빅사, 융소 과목 추가
+        # 임의로 추가한 인공지능, 빅사, 융소 과목 추가
         self.final_result = self.final_result.append(self.tmp_result)
-        self.final_result = self.final_result.drop_duplicates(subset = ['과목명', '교수명', '소속', '과목코드'])
+        self.final_result = self.final_result.drop_duplicates(subset = ['과목명', '교수명', '소속', '과목코드', '수업시간', '수업요일'], keep = 'last')
         self.final_result.reset_index(drop = True, inplace = True)
 
         
@@ -44,7 +44,7 @@ class Coursing:
         self.final_result = self.final_result[~(self.final_result['소속'] == '한국사회문화')]
         self.final_result = self.final_result[~(self.final_result['수업요일'] == '토')]
         
-        self.final_result.drop_duplicates(inplace = True)
+        self.final_result.drop_duplicates(inplace = True, keep = 'last')
         self.final_result.reset_index(inplace = True, drop = True)
         
         for name in list(self.userdb.columns):
@@ -79,20 +79,115 @@ class Coursing:
             x = re.sub('1oT', 'IoT', x)
             x = re.sub('U1/UX', 'UI/UX', x)
             x = re.sub('VLS1', 'VLSI', x)
+            x = re.sub('1MC', 'IMC', x)
             x = re.sub('·', '', x)
             return x
         
         self.year, self.semester = 2021, 1
-        self.first_pre = pd.read_csv(self.path + '/data/sg_course_lst/courses_' + str(self.year) + '_' + str(self.semester) + '.csv').loc[:, ['과목번호', '분반', '과목명', '교수진']]
+        self.first_pre = pd.read_csv(self.path + '/data/sg_course_lst/courses_' + str(self.year) + '_' + str(self.semester) + '.csv').loc[:, ['과목번호', '분반', '과목명', '교수진', '수업시간/강의실']]
+        
+        def withdraw_day(x):
+            result = []
+            if x.count('월') != 0:
+                result.append('월')
+            if x.count('화') != 0:
+                result.append('화')
+            if x.count('수') != 0:
+                result.append('수')
+            if x.count('목') != 0:
+                result.append('목')
+            if x.count('금') != 0:
+                result.append('금')
+            if x.count('토') != 0:
+                result.append('토')
+            return result
+
+        def withdraw_class(x):
+            try:
+                x = x.split('[')[1][:-1]
+                return x
+            except:
+                return '없음'
+
+        def withdraw_time(x):
+            x = re.compile('^[월,화,수,목,금,토]+').sub('', x).lstrip()[:11]
+            return x
+        
+        def change_day(x):
+            x = str(x)
+            x = ''.join(x)
+            x = re.sub(",", "", x)
+            x = re.sub(" ", "", x)
+            x = re.sub("'", "", x)
+            return x
+        
+        def change_day2(x):
+            x = x.lstrip('[')
+            x = x.rstrip(']')
+            x = x.strip()
+            return x
+        
+        self.first_pre.dropna(subset = ['수업시간/강의실'], inplace = True)
+        self.first_pre.reset_index(drop = True, inplace = True)
+        
+        self.first_pre['수업요일'] = self.first_pre['수업시간/강의실'].apply(lambda x : withdraw_day(x))
+        self.first_pre['수업요일'] = self.first_pre['수업요일'].apply(lambda x : change_day(x))
+        self.first_pre['수업요일'] = self.first_pre['수업요일'].apply(lambda x : change_day2(x))
+        self.first_pre['수업시간'] = self.first_pre['수업시간/강의실'].apply(lambda x : withdraw_time(x))
+        self.first_pre['강의실'] = self.first_pre['수업시간/강의실'].apply(lambda x : withdraw_class(x))
         self.first_pre['과목명'] = self.first_pre['과목명'].apply(lambda x : change_name(x))
-        self.first_pre.columns = ['과목번호', '분반', '과목명', '교수명']
+        self.first_pre.columns = ['과목번호', '분반', '과목명', '교수명', '수업시간/강의실', '수업요일', '수업시간', '강의실']
+        self.first_pre.drop(['수업시간/강의실'], axis = 1, inplace = True)
         self.first_pre.drop(['과목번호', '분반'], axis = 1, inplace = True)
-        self.first_pre.drop_duplicates(inplace = True)
+        self.first_pre.drop_duplicates(inplace = True, keep = 'last')
         self.first_pre.reset_index(inplace = True, drop = True)
-        self.final_result = pd.merge(self.first_pre, self.final_result, how = 'left', on = ['과목명', '교수명'])
+        
+        self.final_result = pd.merge(self.first_pre, self.final_result, how = 'left', on = ['과목명', '교수명', '수업시간', '수업요일', '강의실'])
         self.final_result.dropna(subset = ['수업시간'], inplace = True)
-        self.final_result.drop_duplicates(inplace = True)
+        self.final_result.dropna(subset = ['수업요일'], inplace = True)
+        self.final_result.drop_duplicates(inplace = True, keep = 'last')
         self.final_result.reset_index(inplace = True, drop = True)
+        
+        # 임의로 일부 과목 권장학년 수정하기
+        self.idx1 = self.final_result[self.final_result['과목명'].isin(['조직행동이론', '재무관리', '생산관리론', '선형대수학', '기초C언어', '기초java언어', '1T개론', 'IT개론', 'C언어기초', '거시경제학1', '고급공학수학1', '고급공학수학2', '자료구조', '컴퓨터공학설계및실험1', '마케팅원론'])].index
+        self.idx2 = self.final_result[self.final_result['과목명'].isin(['중급회계2', '세무회계', '원가회계', '응용경영통계', '확률및랜덤변수'])].index
+        self.idx3 = self.final_result[self.final_result['과목명'].isin(['Data&AI', '응용수학1', '응용수학2', '이산구조'])].index
+        self.idx4 = self.final_result[self.final_result['과목명'].isin(['고급회계', '회계감사'])].index
+        self.final_result.loc[self.idx1, '권장학년'] = '23'
+        self.final_result.loc[self.idx2, '권장학년'] = '34'
+        self.final_result.loc[self.idx2, '권장학년'] = '12'
+        self.final_result.loc[self.idx2, '권장학년'] = '4'
+        self.final_result.drop_duplicates(inplace = True, keep = 'last')
+        self.final_result.reset_index(inplace = True, drop = True)
+        
+        # 인공지능, 빅데이터사이언스, 융합소프트웨어, 경영 겹치는 과목 처리
+        if (self.userdb.loc[len(self.userdb)-1, '본전공'] in (['경영학'])) & (self.userdb.loc[len(self.userdb)-1, '복수전공'] not in (['빅데이터사이언스', '융합소프트웨어', '인공지능'])):
+            self.not_by_idx = self.final_result[~((self.final_result['소속'] == '빅데이터사이언스') | (self.final_result['소속'] == '융합소프트웨어') | (self.final_result['소속'] == '인공지능'))].index
+            self.final_result = self.final_result.loc[self.not_by_idx, :]
+        elif (self.userdb.loc[len(self.userdb)-1, '본전공'] not in (['경영학'])) & (self.userdb.loc[len(self.userdb)-1, '복수전공'] in (['빅데이터사이언스', '융합소프트웨어', '인공지능'])):
+            self.not_bu_idx = self.final_result[self.final_result['소속'] != '경영학'].index
+            self.final_result = self.final_result.loc[self.not_bu_idx, :]
+        elif (self.userdb.loc[len(self.userdb)-1, '본전공'] not in (['경영학'])) & (self.userdb.loc[len(self.userdb)-1, '복수전공'] in (['경영학'])):
+            self.not_bi_idx = self.final_result[~((self.final_result['소속'] == '빅데이터사이언스') | (self.final_result['소속'] == '융합소프트웨어') | (self.final_result['소속'] == '인공지능'))].index
+            self.final_result = self.final_result.loc[self.not_bi_idx, :]
+        elif (self.userdb.loc[len(self.userdb)-1, '본전공'] in (['경영학'])) & (self.userdb.loc[len(self.userdb)-1, '복수전공'] in (['빅데이터사이언스', '융합소프트웨어', '인공지능'])):
+            self.not_ab_idx = self.final_result[~(self.final_result['소속'] == '경제학')].index
+            self.final_result = self.final_result.loc[self.not_ab_idx, :]
+        elif (self.userdb.loc[len(self.userdb)-1, '본전공'] in (['경제학'])) & (self.userdb.loc[len(self.userdb)-1, '복수전공'] not in (['빅데이터사이언스', '융합소프트웨어', '인공지능'])):
+            self.not_ey_idx = self.final_result[~((self.final_result['소속'] == '빅데이터사이언스') | (self.final_result['소속'] == '융합소프트웨어') | (self.final_result['소속'] == '인공지능'))].index
+            self.final_result = self.final_result.loc[self.not_ey_idx, :]
+        elif (self.userdb.loc[len(self.userdb)-1, '본전공'] not in (['경제학'])) & (self.userdb.loc[len(self.userdb)-1, '복수전공'] in (['빅데이터사이언스', '융합소프트웨어', '인공지능'])):
+            self.not_eu_idx = self.final_result[self.final_result['소속'] != '경제학'].index
+            self.final_result = self.final_result.loc[self.not_eu_idx, :]
+        elif (self.userdb.loc[len(self.userdb)-1, '본전공'] not in (['경제학'])) & (self.userdb.loc[len(self.userdb)-1, '복수전공'] in (['경제학'])):
+            self.not_ei_idx = self.final_result[~((self.final_result['소속'] == '빅데이터사이언스') | (self.final_result['소속'] == '융합소프트웨어') | (self.final_result['소속'] == '인공지능'))].index
+            self.final_result = self.final_result.loc[self.not_ei_idx, :]
+        elif (self.userdb.loc[len(self.userdb)-1, '본전공'] in (['경제학'])) & (self.userdb.loc[len(self.userdb)-1, '복수전공'] in (['빅데이터사이언스', '융합소프트웨어', '인공지능'])):
+            self.not_cd_idx = self.final_result[~(self.final_result['소속'] == '경영')].index
+            self.final_result = self.final_result.loc[self.not_cd_idx, :]
+            
+        self.final_result.drop_duplicates(inplace = True, keep = 'last')
+        self.final_result.reset_index(inplace = True, drop = True)        
         
         # 4. 필수과목 추가
         def cut_must(user_data, final_data):
@@ -100,7 +195,7 @@ class Coursing:
             must2 = user_data.loc[len(user_data)-1, '필수과목2']
             must3 = user_data.loc[len(user_data)-1, '필수과목3']
             final_data = final_data[(final_data['과목명'] == must1) | (final_data['과목명'] == must2) | (final_data['과목명'] == must3)]
-            final_data.drop_duplicates(inplace = True)
+            final_data.drop_duplicates(inplace = True, keep = 'last')
             final_data.reset_index(inplace = True, drop = True)
             return final_data
         self.recommend_answer = self.recommend_answer.append(cut_must(self.userdb, self.final_result))
@@ -120,7 +215,7 @@ class Coursing:
                 self.lst3.append(i)
                 
         self.final_result = self.final_result.drop(self.lst3)
-        self.final_result.drop_duplicates(inplace = True)
+        self.final_result.drop_duplicates(inplace = True, keep = 'last')
         self.final_result.reset_index(drop = True, inplace = True)
 
         self.recommend_answer = self.recommend_answer.sample(frac=1).reset_index(drop=True)
@@ -141,7 +236,7 @@ class Coursing:
             elif (user_data.loc[len(user_data)-1, '전공과목수'] == 0) & (user_data.loc[len(user_data)-1, '교양과목수'] == 0):
                 print("--------------------------------보여드릴 과목이 없습니다. 전공학점과 교양학점을 확인하시고, 다시 실행 시켜주세요.--------------------------------")
                 return None
-            final_data.drop_duplicates(inplace = True)
+            final_data.drop_duplicates(inplace = True, keep = 'last')
             final_data.reset_index(inplace = True, drop = True)
             final_data = final_data.loc[:, ['소속', '과목코드', '과목명', '교수명', '학점', '수업요일', '수업시간', '강의실', '권장학년', '교수특징', '경쟁점수', '꿀점수', '배움점수']]
             return final_data
@@ -150,21 +245,28 @@ class Coursing:
         # 6. 학기수 필터링
         def cut_semester(user_data, final_data):
             seme = user_data.loc[len(user_data)-1, '학기수']
-            if seme in [7, 8, 9]:
+            if seme in [8, 9, 10]:
+                final_data = final_data[~(final_data['권장학년'].isin(['1', '2', '12', '23']))]
+            elif seme in [7]:
                 final_data = final_data[~(final_data['권장학년'].isin(['1', '2', '12', '23']))]
             elif seme in [6]:
                 final_data = final_data[~(final_data['권장학년'].isin(['1', '2', '12']))]
             elif seme in [5]:
-                final_data = final_data[~(final_data['권장학년'].isin(['4']))]
+                final_data = final_data[~(final_data['권장학년'].isin(['4', '1']))]
             elif seme in [4]:
-                final_data = final_data[~(final_data['권장학년'].isin(['4', '34']))]
+                final_data = final_data[~(final_data['권장학년'].isin(['4', '34', '1']))]
             elif seme in [3]:
                 final_data = final_data[~(final_data['권장학년'].isin(['4', '34', '24', '3']))]
             elif seme in [2]:
                 final_data = final_data[~(final_data['권장학년'].isin(['4', '34', '24', '3']))]
             elif seme in [1]:
                 final_data = final_data[~(final_data['권장학년'].isin(['2', '23', '4', '34', '24', '3']))]
-            final_data.drop_duplicates(inplace = True)
+            else:
+                clear_output()
+                print('학기수를 잘못 입력하셨습니다. 커널을 재시작해주세요. (userDB 폴더 삭제 요망)')
+                time.sleep(20)
+                final_data = final_data[~(final_data['권장학년'].isin(['1', '2', '3', '4', '12', '23', '24', '34', '4']))]
+            final_data.drop_duplicates(inplace = True, keep = 'last')
             final_data.reset_index(inplace = True, drop = True)
             final_data = final_data.loc[:, ['소속', '과목코드', '과목명', '교수명', '학점', '수업요일', '수업시간', '강의실', '권장학년', '교수특징', '경쟁점수', '꿀점수', '배움점수']]
             return final_data
@@ -186,7 +288,7 @@ class Coursing:
                 final_data = final_data[~(final_data['수업요일'].isin(['화목', '목']))]
             elif gong == '금':
                 final_data = final_data[~(final_data['수업요일'].isin(['수금', '금']))]
-            final_data.drop_duplicates(inplace = True)
+            final_data.drop_duplicates(inplace = True, keep = 'last')
             final_data.reset_index(inplace = True, drop = True)
             final_data = final_data.loc[:, ['소속', '과목코드', '과목명', '교수명', '학점', '수업요일', '수업시간', '강의실', '권장학년', '교수특징', '경쟁점수', '꿀점수', '배움점수']]
             return final_data
@@ -208,7 +310,7 @@ class Coursing:
                 final_data = final_data[~(final_data['수업시간'].isin(early_bird_lst))]
             else:
                 return final_data
-            final_data.drop_duplicates(inplace = True)
+            final_data.drop_duplicates(inplace = True, keep = 'last')
             final_data.reset_index(inplace = True, drop = True)
             final_data = final_data.loc[:, ['소속', '과목코드', '과목명', '교수명', '학점', '수업요일', '수업시간', '강의실', '권장학년', '교수특징', '경쟁점수', '꿀점수', '배움점수']]
             return final_data
@@ -230,7 +332,7 @@ class Coursing:
                 final_data =pdata              
             elif honey1 == 2:
                 final_data = final_data[final_data['꿀점수'] == 1]
-            final_data.drop_duplicates(inplace = True)
+            final_data.drop_duplicates(inplace = True, keep = 'last')
             final_data.reset_index(inplace = True, drop = True)
             final_data = final_data.loc[:, ['소속', '과목코드', '과목명', '교수명', '학점', '수업요일', '수업시간', '강의실', '권장학년', '교수특징', '경쟁점수', '꿀점수', '배움점수']]
             return final_data
@@ -249,14 +351,14 @@ class Coursing:
                 final_data =pdata              
             elif study1 == 2:
                 final_data = final_data[final_data['배움점수'] == 1]
-            final_data.drop_duplicates(inplace = True)
+            final_data.drop_duplicates(inplace = True, keep = 'last')
             final_data.reset_index(inplace = True, drop = True)
             final_data = final_data.loc[:, ['소속', '과목코드', '과목명', '교수명', '학점', '수업요일', '수업시간', '강의실', '권장학년', '교수특징', '경쟁점수', '꿀점수', '배움점수']]
             return final_data
         self.final_result_1 = cut_honey(self.user1, self.final_result)
         self.final_result_2 = cut_study(self.user1, self.final_result)
         self.final_result = self.final_result_1.append(self.final_result_2)
-        self.final_result.drop_duplicates(inplace = True)
+        self.final_result.drop_duplicates(inplace = True, keep = 'last')
         self.final_result.reset_index(inplace = True, drop = True)
         self.final_result = self.final_result.sort_values(by = '소속').reset_index(drop = True)
         
@@ -264,7 +366,7 @@ class Coursing:
         def last_filter(recom_data, final_data):
             recom_lst = sorted(list(recom_data['과목명'].unique()))
             final_data = final_data[~(final_data['과목명'].isin(recom_lst))]
-            final_data.drop_duplicates(inplace = True)
+            final_data.drop_duplicates(inplace = True, keep = 'last')
             final_data.reset_index(inplace = True, drop = True)
             return final_data
         self.final_result = last_filter(self.recommend_answer, self.final_result)
@@ -290,7 +392,7 @@ class Coursing:
         self.must_plus_jeon = self.sub_number - self.jeon_in_recom
         
         self.final_major_df = self.final_result[(self.final_result['소속'] == self.user_main_major) | (self.final_result['소속'] == self.user_sub_major)].reset_index(drop = True)
-        self.final_not_major_df = self.final_result[~((self.final_result['소속'] == self.user_main_major) | (self.final_result['소속'] == self.user_sub_major))].reset_index(drop = True)
+        self.final_not_major_df = self.final_result[~((self.final_result['소속'] == self.user_main_major) | (self.final_result['소속'] == self.user_sub_major))].reset_index(drop = True)    
         
         # 2. 과목 추천 알고리즘
         def check_plus(df, puzzle):
@@ -414,7 +516,7 @@ class Coursing:
             cnt = 1
             while switch != num:
                 data2 = data.copy()
-                if cnt == 500:
+                if cnt == 1000:
                     return pd.DataFrame(columns = list(data.columns))
                 cnt += 1
                 switch = 0 # 스위치 리셋
@@ -445,11 +547,9 @@ class Coursing:
                         break
             return data2
         
-        pd.options.display.max_rows = 50
-        display(self.recommend_answer)
         if self.must_plus_jeon == 0:
             self.final_result = self.final_result[(self.final_result['소속'] == self.user_main_major) | (self.final_result['소속'] == self.user_sub_major)].reset_index(drop = True)
-            
+        
         print("-------------------------------------------------------------------- Processing -------------------------------------------------------------------")
         self.lpoint = 0
         while True:
@@ -461,10 +561,13 @@ class Coursing:
                 time.sleep(3)
                 clear_output()
                 break
-            elif self.lpoint == 3000:
-                print("\n해당 조건에서는 추천되는 과목이 없습니다. 조건을 조금 더 완화시켜주세요!\n")
-                break
-            if (self.lpoint % 100 == 0) & (self.lpoint != 0):
+            elif self.lpoint == 2100:
+                clear_output()
+                print("오래 기다려주셔서 감사합니다. 😉👍\n곧 결과가 표시됩니다!!!")
+                time.sleep(3)
+                clear_output()
+                break     
+            elif (self.lpoint % 100 == 0) & (self.lpoint != 0):
                 print('-------------------------------------------------------- {0}번째 과목 선정 프로세스 진행중-------------------------------------------------------- '.\
                       format(self.lpoint))
             self.lpoint += 1
@@ -472,11 +575,13 @@ class Coursing:
         self.boss.drop_duplicates(subset = ['과목명'], inplace = True)
         self.boss.reset_index(drop = True, inplace = True)
         # 결과 저장
-        self.now_save = now.strftime('%H%M%S')
+        self.now_save = now.strftime('%m%d_%H%M')
         self.student_name = self.userdb.loc[len(self.userdb)-1, ['이름']].values[0]
         self.student_id = self.userdb.loc[len(self.userdb)-1, ['학번']].values[0]
+        self.boss = self.boss.sort_values(by = ['소속'], ascending = True).reset_index(drop = True)
+        display(self.boss)
+        time.sleep(3)
         self.boss.to_csv(self.path_answer + str(self.student_name) + '(' + str(self.student_id) + ')_' + str(self.now_save) +'.csv', encoding = 'UTF-8-SIG', index = False)
-        display(self.boss) ################################################################################################ 추후 삭제
 
     def run(self):
         self.make_coursing()
